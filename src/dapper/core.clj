@@ -131,18 +131,12 @@
 (comment
 
   (reregister-ldap!
-   :dapper {:host "ec2-184-72-160-16.compute-1.amazonaws.com"
+   :dapper {:host "localhost"
             :bind-user "jcrean"
             :bind-pass "jcjcjc"
             :user-dn-suffix "ou=users,dc=relayzone,dc=com"
             :pooled? true
             :pool-size 3})
-
-  (round-robin-server-set
-   {:host "ec2-184-72-160-16.compute-1.amazonaws.com"
-    :user-dn-suffix "ou=users,dc=relayzone,dc=com"
-    :pooled? true
-    :pool-size 3})
 
   (with-ldap :dapper
     (printf "current-connection: %s" *current-connection*))
