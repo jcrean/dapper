@@ -60,8 +60,8 @@
 (comment
 
   (register-ldap!
-   :dapper {:host "ec2-50-19-176-178.compute-1.amazonaws.com"
-            :user-dn-suffix "ou=users,dc=relayzone,dc=com"})
+   :dapper {:host "your-host"
+            :user-dn-suffix "ou=users,dc=company,dc=com"})
 
   (with-ldap :dapper
     (printf "current-connection: %s" *current-connection*))
