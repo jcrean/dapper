@@ -83,11 +83,16 @@
   (or (:bind-dn config)
       (format "uid=%s,%s" (:bind-user config) (:user-dn-suffix config))))
 
+(defn simple-bind-request
+  ([]
+     (SimpleBindRequest.))
+  ([opts]
+     (SimpleBindRequest. (bind-dn opts) (:bind-pass opts))))
+
 (defn create-connection-pool [config]
-  (create-server-set *conf*)
   (LDAPConnectionPool.
    (create-server-set config)
-   (SimpleBindRequest. (bind-dn config) (:bind-pass config))
+   (simple-bind-request)
    (get config :pool-size *default-pool-size*)))
 
 (defn create-connection [config]
@@ -132,8 +137,6 @@
 
   (reregister-ldap!
    :dapper {:host "localhost"
-            :bind-user "jcrean"
-            :bind-pass "jcjcjc"
             :user-dn-suffix "ou=users,dc=relayzone,dc=com"
             :pooled? true
             :pool-size 3})
