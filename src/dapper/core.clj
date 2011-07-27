@@ -89,17 +89,21 @@
   ([opts]
      (SimpleBindRequest. (bind-dn opts) (:bind-pass opts))))
 
-(defn create-connection-pool [config]
+(defn create-pooled-connection [config]
   (LDAPConnectionPool.
    (create-server-set config)
    (simple-bind-request)
    (get config :pool-size *default-pool-size*)))
 
+(defn create-single-connection [config]
+  (let [{host :host port :port} (server-info (:host config))]
+    (LDAPConnection. host port)))
+
 (defn create-connection [config]
   (println "Creating new connection....")
   (if (:pooled? config)
-    (create-connection-pool config)
-    (raise "Unimplented! non-pooled connections not yet implemented.")))
+    (create-pooled-connection config)
+    (create-single-connection config)))
 
 (defn ldap-connect! [conn-name]
   (if-let [cfg (get @*connection-registry* conn-name)]
@@ -138,7 +142,7 @@
   (reregister-ldap!
    :dapper {:host "localhost"
             :user-dn-suffix "ou=users,dc=relayzone,dc=com"
-            :pooled? true
+            :pooled? false
             :pool-size 3})
 
   (with-ldap :dapper
