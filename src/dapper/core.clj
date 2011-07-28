@@ -12,10 +12,20 @@
 (defonce *connection-registry* (atom {}))
 
 (def ^:dynamic *current-connection* nil)
+(def ^:dynamic *current-connection-config* nil)
 
 (def *default-pool-size* 5)
 (def *default-port* 389)
 (def *default-ssl-port* 636)
+
+(defn conn []
+  *current-connection*)
+
+(defn config
+  ([]
+     *current-connection-config*)
+  ([kwd]
+     (get *current-connection-config* kwd)))
 
 (defn- raise-unregistered-connection! [conn-name]
   (raise "Error: no LDAP connection registered with name [%s], registered names are [%s]"
@@ -64,9 +74,9 @@
 
 (defn single-server-set [config]
   (let [info (server-info (:host config))]
-   (SingleServerSet.
-    (:host info)
-    (:port info))))
+    (SingleServerSet.
+     (:host info)
+     (:port info))))
 
 (defn create-server-set [config]
   (cond (or (:hosts config)
@@ -79,9 +89,16 @@
         :else
         (raise "Error: Don't know how to create server-set from config: %s" config)))
 
+(defn user-dn [username]
+  (if-let [suffix (config :user-dn-suffix)]
+    (format "uid=%s,%s" username suffix)
+    (raise "Error: no :user-dn-suffix in LDAP config: %s" (config))))
+
 (defn bind-dn [config]
   (or (:bind-dn config)
-      (format "uid=%s,%s" (:bind-user config) (:user-dn-suffix config))))
+      (format "uid=%s,%s"
+              (:bind-user config)
+              (:user-dn-suffix config))))
 
 (defn simple-bind-request
   ([]
@@ -100,7 +117,7 @@
     (LDAPConnection. host port)))
 
 (defn create-connection [config]
-  (println "Creating new connection....")
+  (println "Creating new connection....\n")
   (if (:pooled? config)
     (create-pooled-connection config)
     (create-single-connection config)))
@@ -110,43 +127,52 @@
     (or (:connection @cfg)
         (do
           (swap! cfg assoc :connection (create-connection (:config @cfg)))
-          (:connection @cfg)))
+          cfg))
     (raise-unregistered-connection! conn-name)))
 
 (defn ldap-disconnect! [conn-name]
   (if-let [cfg (get @*connection-registry* conn-name)]
     (do
       (when-let [conn (:connection @cfg)]
-        (println "Closing connection...")
+        (println "Closing connection..")
         (.close conn))
-      (println "Unsetting :connection in config...")
+      (println "Unsetting :connection in config..")
       (swap! cfg assoc :connection nil))
     (raise-unregistered-connection! conn-name)))
 
 (defn- with-ldap* [conn-name body-fn]
-  (binding [*current-connection* (ldap-connect! conn-name)]
-    (try
-     (body-fn)
-     (catch Exception ex
-       (printf "Caught exception during execution, msg=%s" (.getMessage ex)))
-     (finally
-      (ldap-disconnect! conn-name)))))
-
+  (let [cfg (ldap-connect! conn-name)]
+    (binding [*current-connection*        (:connection @cfg)
+              *current-connection-config* (:config @cfg)]
+      (try
+       (body-fn)
+       (catch Exception ex
+         (printf "Caught exception during execution, msg=%s\n" (.getMessage ex)))
+       (finally
+        (ldap-disconnect! conn-name))))))
 
 (defmacro with-ldap [conn-name & body]
   `(with-ldap* ~conn-name (fn [] ~@body)))
 
+(defmacro defop [name args & body]
+  `(defn ~name ~args
+     (if-not (conn)
+       (raise "Error: %s must be called in context of the with-ldap macro or by manually binding *current-connection*" ~name)
+       (do ~@body))))
+
+(defop bind [user password]
+  (.bind (conn) (user-dn user) password))
 
 (comment
 
   (reregister-ldap!
    :dapper {:host "localhost"
             :user-dn-suffix "ou=users,dc=relayzone,dc=com"
-            :pooled? false
+            :pooled? true
             :pool-size 3})
 
   (with-ldap :dapper
-    (printf "current-connection: %s" *current-connection*))
+    (bind "jcrean" "jcjcjc"))
 
   (get @*connection-registry* :dapper)
   (ldap-connect! :dapper)
