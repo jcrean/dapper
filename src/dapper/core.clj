@@ -6,7 +6,12 @@
   (:import
    [com.unboundid.ldap.sdk
     LDAPConnection LDAPConnectionPool RoundRobinServerSet
-    SimpleBindRequest SingleServerSet]))
+    SimpleBindRequest SingleServerSet Entry Attribute DN
+    DeleteRequest]
+   [com.unboundid.ldap.sdk.extensions
+    PasswordModifyExtendedRequest
+    PasswordModifyExtendedResult]))
+
 
 
 (defonce *connection-registry* (atom {}))
@@ -30,6 +35,10 @@
 (defn- raise-unregistered-connection! [conn-name]
   (raise "Error: no LDAP connection registered with name [%s], registered names are [%s]"
          conn-name (str/join "," (keys @*connection-registry*))))
+
+(defn- raise-configuration-missing [& keys]
+  (raise "Error: required keys [%s] not found in config: %s"
+         (str/join "," keys) (config)))
 
 (defn register-ldap! [kwd cfg]
   (if (get @*connection-registry* kwd)
@@ -89,14 +98,18 @@
         :else
         (raise "Error: Don't know how to create server-set from config: %s" config)))
 
+;; NB: should validate configuration when (register-ldap) is called
 (defn user-dn [username]
-  (if-let [suffix (config :user-dn-suffix)]
-    (format "uid=%s,%s" username suffix)
-    (raise "Error: no :user-dn-suffix in LDAP config: %s" (config))))
+  (if-not (and (config :user-dn-suffix)
+               (config :user-id-attr))
+    (raise-configuration-missing :user-dn-suffix :user-id-attr)
+    (format "%s=%s,%s" (config :user-id-attr) username (config :user-dn-suffix))))
+
 
 (defn bind-dn [config]
   (or (:bind-dn config)
-      (format "uid=%s,%s"
+      (format "%s=%s,%s"
+              (:user-id-attr config)
               (:bind-user config)
               (:user-dn-suffix config))))
 
@@ -160,19 +173,60 @@
        (raise "Error: %s must be called in context of the with-ldap macro or by manually binding *current-connection*" ~name)
        (do ~@body))))
 
-(defop bind [user password]
-  (.bind (conn) (user-dn user) password))
+(defn make-attribute [k v]
+  (Attribute. (name k) v))
+
+(defn make-entry [dn attrs]
+  (Entry. dn (map make-attribute (keys attrs) (vals attrs))))
+
+(defop bind [dn password]
+  (.bind (conn) dn password))
+
+(defop add [dn attrs]
+  (.add (conn) (make-entry dn attrs)))
+
+(defop password-modify [dn old-pw new-pw]
+  (.processExtendedOperation
+   (conn)
+   (PasswordModifyExtendedRequest. dn old-pw new-pw)))
+
+(defop add-user [username password name sn]
+  (add (user-dn username)
+       {:objectClass "inetOrgPerson"
+        :uid         username
+        :cn          name
+        :sn          sn})
+  (password-modify (user-dn username) nil password))
+
+(defop delete [dn]
+  (.delete (conn) (DeleteRequest. dn)))
+
+;; NB: should make this more flexible
+(defn dn [val]
+  (DN. val))
 
 (comment
 
   (reregister-ldap!
-   :dapper {:host "localhost"
+   :dapper {:host           "localhost"
+            :user-id-attr   "uid"
             :user-dn-suffix "ou=users,dc=relayzone,dc=com"
-            :pooled? true
-            :pool-size 3})
+            :pooled?        true
+            :pool-size      3})
 
   (with-ldap :dapper
-    (bind "jcrean" "jcjcjc"))
+    (bind "cn=admin,dc=domain,dc=com" "admin-secret")
+    (add-user "jdoe" "doe123" "Jon Doe" "Doe")
+    )
+
+  (with-ldap :dapper
+    (bind (user-dn "jdoe") "doe123")
+    )
+
+  (with-ldap :dapper
+    (bind "cn=admin,dc=domain,dc=com" "admin-secret")
+    (delete (user-dn "jdoe"))
+    )
 
   (get @*connection-registry* :dapper)
   (ldap-connect! :dapper)
