@@ -185,21 +185,25 @@
 (defop add [dn attrs]
   (.add (conn) (make-entry dn attrs)))
 
+(defop delete [dn]
+  (.delete (conn) (DeleteRequest. dn)))
+
 (defop password-modify [dn old-pw new-pw]
   (.processExtendedOperation
    (conn)
    (PasswordModifyExtendedRequest. dn old-pw new-pw)))
 
-(defop add-user [username password name sn]
+(defop add-user [username password fname lname]
   (add (user-dn username)
-       {:objectClass "inetOrgPerson"
-        :uid         username
-        :cn          name
-        :sn          sn})
-  (password-modify (user-dn username) nil password))
+       {:objectClass  "inetOrgPerson"
+        :userPassword password
+        :uid          username
+        :cn           (format "%s %s" fname lname)
+        :sn           lname}))
 
-(defop delete [dn]
-  (.delete (conn) (DeleteRequest. dn)))
+(defop delete-user [username]
+  (delete (user-dn username)))
+
 
 ;; NB: should make this more flexible
 (defn dn [val]
@@ -210,22 +214,22 @@
   (reregister-ldap!
    :dapper {:host           "localhost"
             :user-id-attr   "uid"
-            :user-dn-suffix "ou=users,dc=relayzone,dc=com"
+            :user-dn-suffix "ou=users,dc=domain,dc=com"
             :pooled?        true
             :pool-size      3})
 
   (with-ldap :dapper
     (bind "cn=admin,dc=domain,dc=com" "admin-secret")
-    (add-user "jdoe" "doe123" "Jon Doe" "Doe")
+    (add-user "jdoe" "{SSHA}W0JAN2E4ZGZkZDRbQkA0OTk5NzdlMw==" "Jon" "Doe")
     )
 
   (with-ldap :dapper
-    (bind (user-dn "jdoe") "doe123")
+    (bind (user-dn "jdoe") "admin")
     )
 
   (with-ldap :dapper
     (bind "cn=admin,dc=domain,dc=com" "admin-secret")
-    (delete (user-dn "jdoe"))
+    (delete-user "jdoe")
     )
 
   (get @*connection-registry* :dapper)
