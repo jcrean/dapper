@@ -1,0 +1,11 @@
+{
+    "ldap": { "domain": "thedomain",
+              "organization": "Testing LLC",
+              "root_dc": "thedomain",
+              "suffix": "dc=thedomain,dc=com",
+              "root_dn": "cn=admin,dc=thedomain,dc=com",
+              "root_pw": "admin123",
+              "users_ou": "users"
+    },
+    "run_list": [ "recipe[ldap-server::default]" ]
+}
