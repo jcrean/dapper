@@ -153,7 +153,7 @@
       (swap! cfg assoc :connection nil))
     (raise-unregistered-connection! conn-name)))
 
-(defn- with-ldap* [conn-name body-fn]
+(defn with-ldap* [conn-name body-fn]
   (let [cfg (ldap-connect! conn-name)]
     (binding [*current-connection*        (:connection @cfg)
               *current-connection-config* (:config @cfg)]
