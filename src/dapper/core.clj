@@ -160,7 +160,8 @@
       (try
        (body-fn)
        (catch Exception ex
-         (printf "Caught exception during execution, msg=%s\n" (.getMessage ex)))
+         (printf "Caught exception during execution, msg=%s\n" (.getMessage ex))
+         (raise ex))
        (finally
         (ldap-disconnect! conn-name))))))
 
