@@ -4,13 +4,6 @@
   end
 end
 
-directory "/home/ldap" do
-  owner "ldap"
-  group "ldap"
-  mode "0755"
-  action :create
-end
-
 user "ldap" do
   comment "user that will run ldap"
   uid "1000"

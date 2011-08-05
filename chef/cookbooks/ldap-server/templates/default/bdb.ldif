@@ -6,7 +6,7 @@ olcDatabase: {1}bdb
 olcModuleLoad: syncprov
 <% end %>
 <% if node[:ldap][:replication][:role] == 'master' %>
-olcSyncprovCheckpoint: <%= node[:ldap][:replication][:checkpoint][:max_ops] node[:ldap][:replication][:checkpoint][:max_time] %>
+olcSyncprovCheckpoint: <%= node[:ldap][:replication][:checkpoint][:max_ops] %> <%= node[:ldap][:replication][:checkpoint][:max_time] %>
 <% end %>
 olcSuffix: <%= node[:ldap][:suffix] %>
 olcAddContentAcl: FALSE
