@@ -2,6 +2,12 @@ dn: olcDatabase={1}bdb
 objectClass: olcDatabaseConfig
 objectClass: olcBdbConfig
 olcDatabase: {1}bdb
+<% if node[:ldap][:replication] %>
+olcModuleLoad: syncprov
+<% end %>
+<% if node[:ldap][:replication][:role] == 'master' %>
+olcSyncprovCheckpoint: <%= node[:ldap][:replication][:checkpoint][:max_ops] node[:ldap][:replication][:checkpoint][:max_time] %>
+<% end %>
 olcSuffix: <%= node[:ldap][:suffix] %>
 olcAddContentAcl: FALSE
 olcLastMod: TRUE

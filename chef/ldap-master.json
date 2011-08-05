@@ -7,7 +7,10 @@
               "root_pw": "admin123",
               "users_ou": "users",
 
-              "replication": { "role": "slave" }
+              "replication": { "role": "master",
+                               "checkpoint": { "max_ops": 100,
+                                               "max_time": 10 },
+                               "sessionlog_size": 100}
     },
     "run_list": [ "recipe[ldap-server::default]" ]
 }
