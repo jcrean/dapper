@@ -12,7 +12,7 @@ olcSyncrepl: rid=<%= node[:ldap][:replication][:syncrepl][:rid] %>
         provider=<%= node[:ldap][:replication][:syncrepl][:provider] %>
         type=<%= node[:ldap][:replication][:syncrepl][:type] %>
         retry="5 5 300 +"
-        searchBase=<%= node[:ldap][:replication][:syncrepl][:searchbase] %>
+        searchBase="<%= node[:ldap][:replication][:syncrepl][:searchbase] %>"
         bindmethod=simple
         binddn="<%= node[:ldap][:root_dn] %>"
         credentials="<%= node[:ldap][:root_pw] %>"
