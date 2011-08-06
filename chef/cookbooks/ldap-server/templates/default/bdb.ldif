@@ -2,11 +2,9 @@ dn: olcDatabase={1}bdb
 objectClass: olcDatabaseConfig
 objectClass: olcBdbConfig
 olcDatabase: {1}bdb
-<% if node[:ldap][:replication] %>
-olcModuleLoad: syncprov
-<% end %>
 <% if node[:ldap][:replication][:role] == 'master' %>
-olcSyncprovCheckpoint: <%= node[:ldap][:replication][:checkpoint][:max_ops] %> <%= node[:ldap][:replication][:checkpoint][:max_time] %>
+olcModuleLoad: syncprov
+olcOverlay: syncprov
 <% elsif node[:ldap][:replication][:role] == 'slave' %>
 olcSyncrepl: rid=<%= node[:ldap][:replication][:syncrepl][:rid] %>
         provider=<%= node[:ldap][:replication][:syncrepl][:provider] %>
