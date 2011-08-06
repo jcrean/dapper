@@ -5,7 +5,7 @@
 #
 
 LDAP01=ec2-184-72-140-230.compute-1.amazonaws.com
-LDAP02=ec2-107-20-50-80.compute-1.amazonaws.com
+LDAP02=ec2-107-20-41-167.compute-1.amazonaws.com
 
 if [ -z "$1" ]; then
   echo "Supply host to provision"

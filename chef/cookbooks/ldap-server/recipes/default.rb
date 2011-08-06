@@ -4,11 +4,24 @@
   end
 end
 
+group "ldap" do
+  action :create
+  group_name "ldap"
+end
+
 user "ldap" do
+  action :create
   comment "user that will run ldap"
-  uid "1000"
-  gid "ldap"
+  username "ldap"
   home "/home/ldap"
+end
+
+directory "/home/ldap/bin" do
+  owner "ldap"
+  group "ldap"
+  mode "0755"
+  action :create
+  recursive true
 end
 
 template "/etc/openldap/slapd.d/cn=config/olcDatabase={1}bdb.ldif" do
@@ -24,16 +37,10 @@ template "/etc/openldap/users.ldif" do
 end
 
 
-directory "/home/ldap/bin" do
-  owner "ldap"
-  group "ldap"
-  mode "0755"
-  action :create
-end
-
 template "/home/ldap/bin/base-install.sh" do
   source "base-install.sh"
-  owner "ec2-user"
-  group "ec2-user"
+  owner "ldap"
+  group "ldap"
+  mode "0700"
 end
 
