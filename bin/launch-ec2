@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e 
+
+OUT=`ec2-run-instances ami-ff4e8496 --instance-type t1.micro --region us-east-1 --key ${EC2_KEYPAIR} --group ldap-server`
+INSTANCE_ID=`echo $OUT | sed -e 's/.*\(INSTANCE i-[^ ]*\).*/\1/' | cut -f2 -d' '`
+echo $INSTANCE_ID > $EC2_HOME/.instance-id
+echo "Launched EC2 instance: $INSTANCE_ID"
+STATUS='not running'
+while [ "$STATUS" != "running" ]
+do 
+  sleep 1
+  echo "Waiting for instance to come up..."
+  INFO=$(ec2-describe-instances $INSTANCE_ID | grep '^INSTANCE')
+  STATUS=$(echo $INFO | cut -f6 -d' ')
+  echo " - status is $STATUS"
+done
+HOST=$(echo $INFO | cut -f4 -d' ')
+echo $HOST > $EC2_HOME/.ldap-host
+echo " - Hostname: $HOST"

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+ec2-describe-instances | grep '^INSTANCE' | grep 'running' | cut -f2 | xargs ec2-terminate-instances

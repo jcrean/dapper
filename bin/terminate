@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+ec2-terminate-instances $(cat $EC2_HOME/.instance-id)
