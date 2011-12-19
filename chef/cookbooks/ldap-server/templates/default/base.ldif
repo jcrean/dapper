@@ -1,0 +1,6 @@
+dn: <%= node[:ldap][:suffix] %>
+objectClass: dcObject
+objectClass: organization
+objectClass: top
+dc: <%= node[:ldap][:root_dc] %>
+o: <%= node[:ldap][:organization] %>

@@ -1,11 +1,3 @@
-## Root node
-dn: <%= node[:ldap][:suffix] %>
-dc: <%= node[:ldap][:root_dc] %>
-objectClass: dcObject
-objectClass: organizationalUnit
-ou: <%= node[:ldap][:organization] %>
-
-## Users
 dn: ou=<%= node[:ldap][:users_ou] %>,<%= node[:ldap][:suffix] %>
 objectClass: organizationalUnit
 ou: <%= node[:ldap][:users_ou] %>

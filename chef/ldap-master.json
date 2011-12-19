@@ -1,11 +1,12 @@
 {
-    "ldap": { "domain": "thedomain",
-              "organization": "Testing LLC",
-              "root_dc": "thedomain",
-              "suffix": "dc=thedomain,dc=com",
-              "root_dn": "cn=admin,dc=thedomain,dc=com",
+    "ldap": { "domain": "relayzone",
+              "organization": "Relay Network LLC",
+              "root_dc": "relayzone",
+              "suffix": "dc=relayzone,dc=com",
+              "root_dn": "cn=admin,dc=relayzone,dc=com",
               "root_pw": "admin123",
               "users_ou": "users",
+              "log_level": "stats",
 
               "replication": { "role": "master",
                                "checkpoint": { "max_ops": 100,

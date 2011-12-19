@@ -161,7 +161,7 @@
        (body-fn)
        (catch Exception ex
          (printf "Caught exception during execution, msg=%s\n" (.getMessage ex))
-         (raise ex))
+         #_(raise ex))
        (finally
         (ldap-disconnect! conn-name))))))
 
@@ -205,7 +205,6 @@
 (defop delete-user [username]
   (delete (user-dn username)))
 
-
 ;; NB: should make this more flexible
 (defn dn [val]
   (DN. val))
@@ -213,19 +212,19 @@
 (comment
 
   (reregister-ldap!
-   :dapper {:host           "localhost"
+   :dapper {:host           "ec2-107-22-19-119.compute-1.amazonaws.com"
             :user-id-attr   "uid"
-            :user-dn-suffix "ou=users,dc=domain,dc=com"
+            :user-dn-suffix "ou=users,dc=relayzone,dc=com"
             :pooled?        true
             :pool-size      3})
 
   (with-ldap :dapper
-    (bind "cn=admin,dc=domain,dc=com" "admin-secret")
-    (add-user "jdoe" "{SSHA}W0JAN2E4ZGZkZDRbQkA0OTk5NzdlMw==" "Jon" "Doe")
+    (bind "cn=admin,dc=relayzone,dc=com" "admin123")
+    (add-user "jcrean" "jcjcjc" "josh" "crean")
     )
 
   (with-ldap :dapper
-    (bind (user-dn "jdoe") "admin")
+    (bind "uid=jcrean,ou=users,dc=relayzone,dc=com" "jcjc")
     )
 
   (with-ldap :dapper

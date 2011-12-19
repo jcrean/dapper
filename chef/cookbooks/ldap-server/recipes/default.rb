@@ -1,46 +1,39 @@
-["openldap", "openldap-clients", "openldap-servers"].each do |p|
+["slapd", "ldap-utils"].each do |p|
   package p do
     action :install
   end
 end
 
-group "ldap" do
-  action :create
-  group_name "ldap"
+template "/etc/ldap/db.ldif" do
+  source "db.ldif"
+  owner "root"
+  group "root"
 end
 
-user "ldap" do
-  action :create
-  comment "user that will run ldap"
-  username "ldap"
-  home "/home/ldap"
+template "/etc/ldap/base.ldif" do
+  source "base.ldif"
+  owner "root"
+  group "root"
 end
 
-directory "/home/ldap/bin" do
-  owner "ldap"
-  group "ldap"
-  mode "0755"
-  action :create
-  recursive true
-end
-
-template "/etc/openldap/slapd.d/cn=config/olcDatabase={1}bdb.ldif" do
-  source "bdb.ldif"
-  owner "ldap"
-  group "ldap"
-end
-
-template "/etc/openldap/users.ldif" do
+template "/etc/ldap/users.ldif" do
   source "users.ldif"
-  owner "ldap"
-  group "ldap"
+  owner "root"
+  group "root"
 end
 
-
-template "/home/ldap/bin/base-install.sh" do
+template "/etc/ldap/base-install.sh" do
   source "base-install.sh"
-  owner "ldap"
-  group "ldap"
+  owner "root"
+  group "root"
   mode "0700"
 end
 
+
+bash "install base ldap config" do
+  user "root"
+  cwd "/etc/ldap"
+  code <<-EOH
+  ./base-install.sh
+  EOH
+end

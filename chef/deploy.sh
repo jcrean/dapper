@@ -10,12 +10,14 @@ if [ -z "$1" ]; then
 fi
 
 ROLE=$1
-HOST=${2:-localhost}
+HOST=${LDAP_HOST:-$(cat $EC2_HOME/.ldap-host)}
+USER=${EC2_USERNAME:-ec2-user}
 
 echo "Provisioning new $ROLE LDAP server at $HOST"
+echo "Will connect to $HOST as user $USER"
 
-rsync -avz . ec2-user@$HOST:/home/ec2-user/chef/
-
-echo "ssh -t ec2-user@$HOST 'cd chef; sudo ./install.sh $ROLE;'"
-ssh -t ec2-user@$HOST "cd chef; sudo ./install.sh $ROLE"
-
+DIR="$( cd "$( dirname "$0" )" && pwd )"
+rsync -avz $DIR/* $USER@$HOST:/home/$USER/chef/
+ 
+echo "ssh -t $USER@$HOST 'cd chef; sudo ./install.sh $ROLE;'"
+ssh -t $USER@$HOST "cd chef; sudo ./install.sh $ROLE"

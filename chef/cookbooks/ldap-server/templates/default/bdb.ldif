@@ -2,10 +2,35 @@ dn: olcDatabase={1}bdb
 objectClass: olcDatabaseConfig
 objectClass: olcBdbConfig
 olcDatabase: {1}bdb
-<% if node[:ldap][:replication][:role] == 'master' %>
+<% if node[:ldap][:replication][:role] == 'master-mirror' %>
+olcServerID: <%= node[:ldap][:replication][:server_id] %>
+<% end %>
+<% if node[:ldap][:replication][:role] != 'slave' %>
 olcModuleLoad: syncprov
 olcOverlay: syncprov
+olcSyncrepl: rid=<%= node[:ldap][:replication][:syncrepl][:rid] %>
+        provider=<%= node[:ldap][:replication][:syncrepl][:provider] %>
+        type=<%= node[:ldap][:replication][:syncrepl][:type] %>
+        retry="5 5 300 +"
+        searchBase="<%= node[:ldap][:replication][:syncrepl][:searchbase] %>"
+        schemachecking=on
+        bindmethod=simple
+        binddn="<%= node[:ldap][:root_dn] %>"
+        credentials="<%= node[:ldap][:root_pw] %>"
+olcMirrormode: on
 <% elsif node[:ldap][:replication][:role] == 'slave' %>
+
+olcModuleLoad: chain
+olcOverlay: chain
+olcChainUri: "ldap://ec2-184-73-61-44.compute-1.amazonaws.com"
+olcChainIdassertBind:  bindmethod="simple"
+                       binddn="cn=admin,dc=thedomain,dc=com"
+                       credentials="admin123"
+                       mode="self"
+olcChainReturnError: TRUE
+
+
+
 olcSyncrepl: rid=<%= node[:ldap][:replication][:syncrepl][:rid] %>
         provider=<%= node[:ldap][:replication][:syncrepl][:provider] %>
         type=<%= node[:ldap][:replication][:syncrepl][:type] %>
@@ -14,12 +39,14 @@ olcSyncrepl: rid=<%= node[:ldap][:replication][:syncrepl][:rid] %>
         bindmethod=simple
         binddn="<%= node[:ldap][:root_dn] %>"
         credentials="<%= node[:ldap][:root_pw] %>"
+olcUpdateref: ldap://ec2-184-73-61-44.compute-1.amazonaws.com
 <% end %>
 olcSuffix: <%= node[:ldap][:suffix] %>
 olcAddContentAcl: FALSE
 olcLastMod: TRUE
 olcMaxDerefDepth: 15
 olcReadOnly: FALSE
+olcLogLevel: <%= node[:ldap][:log_level] %>
 olcRootDN: <%= node[:ldap][:root_dn] %>
 olcRootPW: <%= node[:ldap][:root_pw] %>
 olcAccess: to dn.children="ou=<%= node[:ldap][:users_ou] %>,<%= node[:ldap][:suffix] %>"
