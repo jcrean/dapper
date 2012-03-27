@@ -2,14 +2,17 @@
 
 set -e 
 
+ROLE=${1:-'master'}
 OUT=`ec2-run-instances ami-ff4e8496 --instance-type t1.micro --region us-east-1 --key ${EC2_KEYPAIR} --group ldap-server`
 INSTANCE_ID=`echo $OUT | sed -e 's/.*\(INSTANCE i-[^ ]*\).*/\1/' | cut -f2 -d' '`
 echo $INSTANCE_ID > $EC2_HOME/.instance-id
 echo "Launched EC2 instance: $INSTANCE_ID"
+echo "Setting ldap-role: $ROLE"
+ec2-create-tags $INSTANCE_ID --tag ldap-role=$ROLE
 STATUS='not running'
 while [ "$STATUS" != "running" ]
 do 
-  sleep 1
+  sleep 2
   echo "Waiting for instance to come up..."
   INFO=$(ec2-describe-instances $INSTANCE_ID | grep '^INSTANCE')
   STATUS=$(echo $INFO | cut -f6 -d' ')

@@ -5,7 +5,7 @@
 #
 
 CHEF_BINARY=/usr/local/bin/chef-solo
-ROLE=${1:-'master'}
+CONFIG=$1
 
 # Are we on a vanilla system?
 if ! test -f "$CHEF_BINARY"; then
@@ -16,4 +16,4 @@ if ! test -f "$CHEF_BINARY"; then
    sudo gem install --no-rdoc --no-ri chef --version 0.10.0
 fi &&
 
-$CHEF_BINARY -c solo.rb -j ldap-$ROLE.json
+sudo $CHEF_BINARY -c solo.rb -j $CONFIG

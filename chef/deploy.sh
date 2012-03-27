@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# This was taken mostly from http://opinionated-programmer.com/2011/06/chef-solo-tutorial-managing-a-single-server-with-chef/. 
+# This was taken mostly from http://opinionated-programmer.com/2011/06/chef-solo-tutorial-managing-a-single-server-with-chef/.
 #
 
 if [ -z "$1" ]; then
@@ -10,14 +10,14 @@ if [ -z "$1" ]; then
 fi
 
 ROLE=$1
-HOST=${LDAP_HOST:-$(cat $EC2_HOME/.ldap-host)}
+HOST=$2
 USER=${EC2_USERNAME:-ec2-user}
 
 echo "Provisioning new $ROLE LDAP server at $HOST"
 echo "Will connect to $HOST as user $USER"
 
 DIR="$( cd "$( dirname "$0" )" && pwd )"
-rsync -avz $DIR/* $USER@$HOST:/home/$USER/chef/
- 
+rsync -avz -e "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" $DIR/* $USER@$HOST:/home/$USER/chef/
+
 echo "ssh -t $USER@$HOST 'cd chef; sudo ./install.sh $ROLE;'"
 ssh -t $USER@$HOST "cd chef; sudo ./install.sh $ROLE"

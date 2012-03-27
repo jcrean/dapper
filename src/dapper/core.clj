@@ -2,54 +2,57 @@
   (:require
    [clojure.string    :as str])
   (:use
+   dapper.bindings
+   dapper.dsl
    [clj-etl-utils.lang-utils  :only [raise]])
   (:import
    [com.unboundid.ldap.sdk
     LDAPConnection LDAPConnectionPool RoundRobinServerSet
-    SimpleBindRequest SingleServerSet Entry Attribute DN
-    DeleteRequest]
+    SimpleBindRequest SingleServerSet]
    [com.unboundid.ldap.sdk.extensions
     PasswordModifyExtendedRequest
     PasswordModifyExtendedResult]))
 
 
-
 (defonce *connection-registry* (atom {}))
 
-(def ^:dynamic *current-connection* nil)
-(def ^:dynamic *current-connection-config* nil)
-
 (def *default-pool-size* 5)
-(def *default-port* 389)
-(def *default-ssl-port* 636)
+(def *default-port*      389)
+(def *default-ssl-port*  636)
 
-(defn conn []
-  *current-connection*)
-
-(defn config
-  ([]
-     *current-connection-config*)
-  ([kwd]
-     (get *current-connection-config* kwd)))
+(defn pooled? [cfg]
+  (:pooled? (:config @cfg)))
 
 (defn- raise-unregistered-connection! [conn-name]
   (raise "Error: no LDAP connection registered with name [%s], registered names are [%s]"
          conn-name (str/join "," (keys @*connection-registry*))))
 
-(defn- raise-configuration-missing [& keys]
-  (raise "Error: required keys [%s] not found in config: %s"
-         (str/join "," keys) (config)))
+(defn return-connection-to-pool [cfg]
+  (when-not (:pool @cfg)
+    (raise (format "Attempt to return connection to pool failed, no pool in config [%s]" @cfg)))
+  (println " - Returning connection to pool ")
+  (.releaseConnection (:pool @cfg) (:connection @cfg)))
+
+(defn close-connection [cfg]
+  (if (pooled? cfg)
+    (return-connection-to-pool cfg)
+    (.close (:connection @cfg))))
+
+(defn lookup-ldap [kwd]
+  (get @*connection-registry* kwd))
 
 (defn register-ldap! [kwd cfg]
-  (if (get @*connection-registry* kwd)
+  (if (lookup-ldap kwd)
     (raise "LDAP Connection already registered under %s" kwd)
     (swap! *connection-registry* assoc kwd (atom {:connection nil :config cfg}))))
 
 (defn unregister-ldap! [kwd]
-  (if-let [conf (get @*connection-registry* kwd)]
+  (if-let [conf (lookup-ldap kwd)]
     (do
       (when-let [conn (:connection @conf)]
-        (.close conn))
+        (close-connection conf))
+      (when-let [pool (:pool @conf)]
+        (.close pool))
       (swap! *connection-registry* dissoc kwd))
     (raise-unregistered-connection! kwd)))
 
@@ -57,7 +60,6 @@
   (when (get @*connection-registry* kwd)
     (unregister-ldap! kwd))
   (register-ldap! kwd cfg))
-
 
 (defn configured-hosts [config]
   (concat
@@ -98,13 +100,6 @@
         :else
         (raise "Error: Don't know how to create server-set from config: %s" config)))
 
-;; NB: should validate configuration when (register-ldap) is called
-(defn user-dn [username]
-  (if-not (and (config :user-dn-suffix)
-               (config :user-id-attr))
-    (raise-configuration-missing :user-dn-suffix :user-id-attr)
-    (format "%s=%s,%s" (config :user-id-attr) username (config :user-dn-suffix))))
-
 
 (defn bind-dn [config]
   (or (:bind-dn config)
@@ -135,20 +130,43 @@
     (create-pooled-connection config)
     (create-single-connection config)))
 
+(defn ensure-pool [cfg]
+  (if-not (:pool @cfg)
+    (do
+      (println " Creating pooled connection")
+      (swap! cfg assoc :pool (create-pooled-connection (:config @cfg))))
+    (println " Pool already created, nothing to do")))
+
+(defn ensure-connection [cfg]
+  (println "ensure-connection")
+  (if-not (:connection @cfg)
+    (do
+      (println " -- no connection yet, will create one")
+      (swap! cfg assoc :connection
+             (if (:pooled? (:config @cfg))
+               (do
+                 (println " * pooled connections requested, ensuring pool exists..")
+                 (ensure-pool cfg)
+                 (.getConnection (:pool @cfg)))
+               (do
+                 (println " * regular (non-pooled) connections requested, creating connection..")
+                 (create-single-connection (:config @cfg))))))
+    (println " -- connection already exists, nothing to do"))
+  cfg)
+
 (defn ldap-connect! [conn-name]
-  (if-let [cfg (get @*connection-registry* conn-name)]
-    (or (:connection @cfg)
-        (do
-          (swap! cfg assoc :connection (create-connection (:config @cfg)))
-          cfg))
+  (println (format "ldap-connect! [%s]" conn-name))
+  (if-let [cfg (lookup-ldap conn-name)]
+    (ensure-connection cfg)
     (raise-unregistered-connection! conn-name)))
 
 (defn ldap-disconnect! [conn-name]
+  (println "ldap-disconnect!")
   (if-let [cfg (get @*connection-registry* conn-name)]
     (do
       (when-let [conn (:connection @cfg)]
         (println "Closing connection..")
-        (.close conn))
+        (close-connection cfg))
       (println "Unsetting :connection in config..")
       (swap! cfg assoc :connection nil))
     (raise-unregistered-connection! conn-name)))
@@ -168,51 +186,10 @@
 (defmacro with-ldap [conn-name & body]
   `(with-ldap* ~conn-name (fn [] ~@body)))
 
-(defmacro defop [name args & body]
-  `(defn ~name ~args
-     (if-not (conn)
-       (raise "Error: %s must be called in context of the with-ldap macro or by manually binding *current-connection*" ~name)
-       (do ~@body))))
-
-(defn make-attribute [k v]
-  (Attribute. (name k) v))
-
-(defn make-entry [dn attrs]
-  (Entry. dn (map make-attribute (keys attrs) (vals attrs))))
-
-(defop bind [dn password]
-  (.bind (conn) dn password))
-
-(defop add [dn attrs]
-  (.add (conn) (make-entry dn attrs)))
-
-(defop delete [dn]
-  (.delete (conn) (DeleteRequest. dn)))
-
-(defop password-modify [dn old-pw new-pw]
-  (.processExtendedOperation
-   (conn)
-   (PasswordModifyExtendedRequest. dn old-pw new-pw)))
-
-(defop add-user [username password fname lname]
-  (add (user-dn username)
-       {:objectClass  "inetOrgPerson"
-        :userPassword password
-        :uid          username
-        :cn           (format "%s %s" fname lname)
-        :sn           lname}))
-
-(defop delete-user [username]
-  (delete (user-dn username)))
-
-;; NB: should make this more flexible
-(defn dn [val]
-  (DN. val))
-
 (comment
 
   (reregister-ldap!
-   :dapper {:host           "ec2-107-22-19-119.compute-1.amazonaws.com"
+   :dapper {:host           "ec2-107-22-159-68.compute-1.amazonaws.com"
             :user-id-attr   "uid"
             :user-dn-suffix "ou=users,dc=relayzone,dc=com"
             :pooled?        true
@@ -220,18 +197,7 @@
 
   (with-ldap :dapper
     (bind "cn=admin,dc=relayzone,dc=com" "admin123")
-    (add-user "jcrean" "jcjcjc" "josh" "crean")
-    )
+    (add-user "jcrean" "jcjcjc" "josh" "crean"))
 
-  (with-ldap :dapper
-    (bind "uid=jcrean,ou=users,dc=relayzone,dc=com" "jcjc")
-    )
-
-  (with-ldap :dapper
-    (bind "cn=admin,dc=domain,dc=com" "admin-secret")
-    (delete-user "jdoe")
-    )
-
-  (get @*connection-registry* :dapper)
-  (ldap-connect! :dapper)
   )
+
