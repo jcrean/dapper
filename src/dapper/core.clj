@@ -1,5 +1,6 @@
 (ns dapper.core
   (:require
+   [dapper.filters    :as f]
    [clojure.string    :as str])
   (:use
    dapper.bindings
@@ -208,7 +209,19 @@
 
   (with-ldap :dapper
     (find-users
-     (filter/equals :uid :jcrean)
-     :cn :sn :uid))
+     (f/any :objectClass)
+     :cn :uid :sn))
+
+  (with-ldap :dapper
+    (find-users
+     (f/and
+      (f/= :sn "crean")
+      (f/= :uid "jcrean"))))
+
+  (with-ldap :dapper
+    (find-users
+     (f/or
+      (f/= :uid "jdoe")
+      (f/= :uid "jcrean"))))
   )
 
