@@ -72,7 +72,7 @@
           (reduce
            (fn [attrs attr]
              (assoc attrs
-               (.getName attr)
+               (keyword (.getName attr))
                (.getValue attr)))
            {}
            (.getAttributes entry)))
