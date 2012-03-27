@@ -19,6 +19,9 @@
 (defn or [& filters]
   (Filter/createORFilter filters))
 
+(defn not [filter]
+  (Filter/createNOTFilter filter))
+
 (defn greater-or-equal [attr-name attr-value]
   (Filter/createGreaterOrEqualFilter (name attr-name) (name attr-value)))
 
@@ -35,3 +38,6 @@
 
 (defn <= [& args]
   (apply less-or-equal args))
+
+(defn ! [filter]
+  (not filter))

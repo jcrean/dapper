@@ -220,8 +220,8 @@
 
   (with-ldap :dapper
     (find-users
-     (f/or
-      (f/= :uid "jdoe")
-      (f/= :uid "jcrean"))))
+     (f/and
+      (f/not (f/= :uid "jcrean"))
+      (f/not (f/= :uid "jdoe")))))
   )
 
