@@ -197,7 +197,7 @@
 
   (with-ldap :dapper
     (bind "cn=admin,dc=relayzone,dc=com" "admin123")
-    (add-user "jcrean" "jcjcjc" "josh" "crean"))
+    #_(add-user "jcrean" "jcjcjc" "josh" "crean"))
 
   (with-ldap :dapper
     (bind "cn=admin,dc=relayzone,dc=com" "admin123")
@@ -207,6 +207,8 @@
     (find-users))
 
   (with-ldap :dapper
-    (find-users (filter/equals :uid :jcrean)))
+    (find-users
+     (filter/equals :uid :jcrean)
+     :cn :sn :uid))
   )
 

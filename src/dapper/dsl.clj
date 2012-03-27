@@ -79,7 +79,11 @@
         (.getSearchEntries
          (.processOperation
           (conn)
-          (SearchRequest. base-dn scope filter (into-array String attrs)))))))
+          (SearchRequest.
+           base-dn
+           scope
+           filter
+           (into-array String (map name attrs))))))))
 
 (defop delete-user [username]
   (delete (user-dn username)))
@@ -103,5 +107,5 @@
 (defn find-users
   ([]
      (find-users (filter/create "(objectClass=*)")))
-  ([filter]
-     (search (config :user-dn-suffix) (scope :subordinate) filter)))
+  ([filter & return-attrs]
+     (apply search (config :user-dn-suffix) (scope :subordinate) filter return-attrs)))
