@@ -1,11 +1,13 @@
 (ns dapper.dsl
   (:require
-   [clojure.string :as str])
+   [clojure.string :as str]
+   [dapper.filters    :as filter])
   (:use
    dapper.bindings
    [clj-etl-utils.lang-utils :only [raise]])
   (:import
-   [com.unboundid.ldap.sdk Entry Attribute DN DeleteRequest]
+   [com.unboundid.ldap.sdk Entry Attribute DN
+    DeleteRequest SearchRequest SearchScope]
    [com.unboundid.ldap.sdk.extensions
     PasswordModifyExtendedRequest
     PasswordModifyExtendedResult]))
@@ -64,9 +66,42 @@
         :cn           (format "%s %s" fname lname)
         :sn           lname}))
 
+(defop search [base-dn scope filter & attrs]
+  (vec
+   (map (fn [entry]
+          (reduce
+           (fn [attrs attr]
+             (assoc attrs
+               (.getName attr)
+               (.getValue attr)))
+           {}
+           (.getAttributes entry)))
+        (.getSearchEntries
+         (.processOperation
+          (conn)
+          (SearchRequest. base-dn scope filter (into-array String attrs)))))))
+
 (defop delete-user [username]
   (delete (user-dn username)))
 
 ;; NB: should make this more flexible
 (defn dn [val]
   (DN. val))
+
+(def *search-scopes*
+     {:base        SearchScope/BASE
+      :one         SearchScope/ONE
+      :subtree     SearchScope/SUB
+      :subordinate SearchScope/SUBORDINATE_SUBTREE})
+
+(defn scope [kwd]
+  (if-let [mapping (get *search-scopes* kwd)]
+    mapping
+    (raise "Unrecognized search-scope: %s, try one of [%s]" kwd (str/join "," (keys *search-scopes*)))))
+
+
+(defn find-users
+  ([]
+     (find-users (filter/create "(objectClass=*)")))
+  ([filter]
+     (search (config :user-dn-suffix) (scope :subordinate) filter)))
