@@ -193,24 +193,31 @@
    :dapper {:host           "ec2-107-22-159-68.compute-1.amazonaws.com"
             :user-id-attr   "uid"
             :user-dn-suffix "ou=users,dc=relayzone,dc=com"
+            :role-dn-suffix "ou=roles,dc=relayzone,dc=com"
             :pooled?        true
             :pool-size      3})
 
   (with-ldap :dapper
     (bind "cn=admin,dc=relayzone,dc=com" "admin123")
-    #_(add-user "jcrean" "jcjcjc" "josh" "crean"))
+    (add-user "jcrean2" "jcjcjc" "josh" "crean"))
 
   (with-ldap :dapper
     (bind "cn=admin,dc=relayzone,dc=com" "admin123")
-    (add-user "jdoe" "jdoe123" "john" "doe"))
+    (add-user "lc" "lc888" "lau" "c"))
 
   (with-ldap :dapper
-    (find-users))
+    (bind "cn=admin,dc=relayzone,dc=com" "admin123")
+    (add-role "admin2" "admin users" ["jcrean" "jdoe"]))
 
   (with-ldap :dapper
-    (find-users
-     (f/any :objectClass)
-     :cn :uid :sn))
+    (bind "cn=admin,dc=relayzone,dc=com" "admin123")
+    (add-role "admin4" "admin users" ["jcrean2"]))
+
+  (with-ldap :dapper
+    (user-roles "jcrean"))
+
+  (with-ldap :dapper
+    (find-user "jcrean2"))
 
   (with-ldap :dapper
     (find-users

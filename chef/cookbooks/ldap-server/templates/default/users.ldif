@@ -1,3 +1,7 @@
 dn: ou=<%= node[:ldap][:users_ou] %>,<%= node[:ldap][:suffix] %>
 objectClass: organizationalUnit
 ou: <%= node[:ldap][:users_ou] %>
+
+dn: ou=<%= node[:ldap][:roles_ou] %>,<%= node[:ldap][:suffix] %>
+objectClass: organizationalUnit
+ou: <%= node[:ldap][:roles_ou] %>

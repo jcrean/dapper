@@ -32,6 +32,11 @@
     (raise-configuration-missing :user-dn-suffix :user-id-attr)
     (format "%s=%s,%s" (config :user-id-attr) username (config :user-dn-suffix))))
 
+(defn role-dn [role-name]
+  (if-not (config :role-dn-suffix)
+    (raise-configuration-missing :role-dn-suffix)
+    (format "cn=%s,%s" role-name (config :role-dn-suffix))))
+
 (defmacro defop [name args & body]
   `(defn ~name ~args
      (if-not (conn)
@@ -66,16 +71,31 @@
         :cn           (format "%s %s" fname lname)
         :sn           lname}))
 
+(defop add-role [role-name desc & [usernames]]
+  (add (role-dn role-name)
+       {:objectClass "groupOfNames"
+        :cn          role-name
+        :description desc
+        :member      (if usernames
+                       (vec (map user-dn usernames))
+                       "")}))
+
+(defn- marshall-search-result [entry]
+  (reduce
+   (fn [attrs attr]
+     (let [values (.getValues attr)
+           attr-val (if (= 1 (count values))
+                      (first values)
+                      (vec values))]
+       (assoc attrs
+         (keyword (.getName attr))
+         attr-val)))
+   {:dn (.getDN entry)}
+   (.getAttributes entry)))
+
 (defop search [base-dn scope filter & attrs]
   (vec
-   (map (fn [entry]
-          (reduce
-           (fn [attrs attr]
-             (assoc attrs
-               (keyword (.getName attr))
-               (.getValue attr)))
-           {}
-           (.getAttributes entry)))
+   (map marshall-search-result
         (.getSearchEntries
          (.processOperation
           (conn)
@@ -109,3 +129,16 @@
      (find-users (filter/create "(objectClass=*)")))
   ([filter & return-attrs]
      (apply search (config :user-dn-suffix) (scope :subordinate) filter return-attrs)))
+
+(defn find-user [username & attrs]
+  (apply
+   find-users
+   (filter/= (config :user-id-attr) username)
+   attrs))
+
+(defn user-roles [username]
+  (map :cn
+       (search (config :role-dn-suffix)
+               (scope :subordinate)
+               (filter/= :member (user-dn username))
+               :cn)))
