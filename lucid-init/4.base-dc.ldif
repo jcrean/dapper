@@ -1,6 +1,6 @@
-dn: dc=relayzone,dc=com
+dn: dc=yourdomain,dc=com
 objectClass: dcObject
 objectClass: organization
 objectClass: top
-dc: relayzone
+dc: yourdomain
 o: rz

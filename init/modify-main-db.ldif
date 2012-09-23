@@ -1,27 +1,27 @@
 dn: olcDatabase={1}hdb,cn=config
 changetype: modify
 replace: olcSuffix
-olcSuffix: dc=relayzone,dc=com
+olcSuffix: dc=yourdomain,dc=com
 -
 replace: olcRootDN
-olcRootDN: cn=admin,dc=relayzone,dc=com
+olcRootDN: cn=admin,dc=yourdomain,dc=com
 -
 replace: olcSyncRepl
-olcSyncRepl: rid=004 provider=ldap://ec2-107-21-80-56.compute-1.amazonaws.com binddn="cn=admin,dc=relayzone,dc=com" bindmethod=simple
-  credentials=admin123 searchbase="dc=relayzone,dc=com" type=refreshAndPersist
+olcSyncRepl: rid=004 provider=ldap://ec2-107-21-80-56.compute-1.amazonaws.com binddn="cn=admin,dc=yourdomain,dc=com" bindmethod=simple
+  credentials=admin123 searchbase="dc=yourdomain,dc=com" type=refreshAndPersist
   interval=00:00:00:10 retry="5 5 300 5" timeout=1
-olcSyncRepl: rid=005 provider=ldap://ec2-23-20-229-105.compute-1.amazonaws.com binddn="cn=admin,dc=relayzone,dc=com" bindmethod=simple
-  credentials=admin123 searchbase="dc=relayzone,dc=com" type=refreshAndPersist
+olcSyncRepl: rid=005 provider=ldap://ec2-23-20-229-105.compute-1.amazonaws.com binddn="cn=admin,dc=yourdomain,dc=com" bindmethod=simple
+  credentials=admin123 searchbase="dc=yourdomain,dc=com" type=refreshAndPersist
   interval=00:00:00:10 retry="5 5 300 5" timeout=1
-olcSyncRepl: rid=006 provider=ldap://ec2-174-129-115-179.compute-1.amazonaws.com binddn="cn=admin,dc=relayzone,dc=com" bindmethod=simple
-  credentials=admin123 searchbase="dc=relayzone,dc=com" type=refreshAndPersist
+olcSyncRepl: rid=006 provider=ldap://ec2-174-129-115-179.compute-1.amazonaws.com binddn="cn=admin,dc=yourdomain,dc=com" bindmethod=simple
+  credentials=admin123 searchbase="dc=yourdomain,dc=com" type=refreshAndPersist
   interval=00:00:00:10 retry="5 5 300 5" timeout=1
 -
 replace: olcAccess
 olcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymou
- s auth by dn="cn=admin,dc=relayzone,dc=com" write by * none
+ s auth by dn="cn=admin,dc=yourdomain,dc=com" write by * none
 olcAccess: {1}to dn.base="" by * read
-olcAccess: {2}to * by self write by dn="cn=admin,dc=relayzone,dc=com" write by 
+olcAccess: {2}to * by self write by dn="cn=admin,dc=yourdomain,dc=com" write by 
  * read
 -
 replace: olcMirrorMode

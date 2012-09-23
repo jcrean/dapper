@@ -2,15 +2,15 @@ dn: olcDatabase=hdb,cn=config
 objectClass: olcDatabaseConfig
 objectClass: olcHdbConfig
 olcDatabase: hdb
-olcSuffix: dc=relayzone,dc=com
+olcSuffix: dc=yourdomain,dc=com
 olcDbDirectory: /var/lib/ldap
-olcRootDN: cn=admin,dc=relayzone,dc=com
+olcRootDN: cn=admin,dc=yourdomain,dc=com
 olcRootPW: {SSHA}yj/WpczL2aV4X5Roc2eFdJYCbtdhUhfz
-olcAccess: {0}to attrs=userPassword by self write by anonymous auth by dn="cn=admin,dc=relayzone,dc=com" write by * none
+olcAccess: {0}to attrs=userPassword by self write by anonymous auth by dn="cn=admin,dc=yourdomain,dc=com" write by * none
 olcAccess: {1}to dn.base="" by * read
-olcAccess: {2}to * by self write by dn="cn=admin,dc=relayzone,dc=com" write by * read
+olcAccess: {2}to * by self write by dn="cn=admin,dc=yourdomain,dc=com" write by * read
 olcLastMod: TRUE
-olcLimits: dn.exact="cn=admin,dc=relayzone,dc=com" time.soft=unlimited time.hard=unlimited size.soft=unlimited size.hard=unlimited
+olcLimits: dn.exact="cn=admin,dc=yourdomain,dc=com" time.soft=unlimited time.hard=unlimited size.soft=unlimited size.hard=unlimited
 olcDbCheckpoint: 512 30
 olcDbIndex: objectClass eq
 olcDbConfig: {0}set_cachesize 0 2097152 0

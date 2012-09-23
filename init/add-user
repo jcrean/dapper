@@ -2,8 +2,8 @@
 
 set -e
 
-ldapadd -x -w admin123 -D 'cn=admin,dc=relayzone,dc=com' <<-LDAP
-dn: uid=$1,ou=users,dc=relayzone,dc=com
+ldapadd -x -w admin123 -D 'cn=admin,dc=yourdomain,dc=com' <<-LDAP
+dn: uid=$1,ou=users,dc=yourdomain,dc=com
 objectClass: inetOrgPerson
 uid: $1
 cn: j c
