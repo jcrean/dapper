@@ -22,7 +22,7 @@ class EC2Configurator
     while !ssh_success && current_retries < max_retries
       begin
         puts "Attempting ssh connection #{hostname} as #{username}"
-        Net::SSH.start(hostname,username) do |ssh|
+        Net::SSH.start(hostname,username,:keys=>[ENV['EC2_SSH_KEYFILE']]) do |ssh|
           puts "Connect success"
           ssh_success = true
         end
@@ -115,8 +115,19 @@ class EC2Configurator
     config[:servers].each do |name,conf|
       puts " - server: #{name}, role: #{conf[:role]}"
       role = conf[:role]
+      puts " --- Ensuring valid config: #{config.inspect}"
       chef_config = ensure_valid_config config
       chef_config[:ldap][:replication] = conf[:replication]
+      server_id = 1
+      if conf[:replication][:provider]
+        chef_config[:ldap][:replication][:provider] = @instances.select {|k,v| v[:name] == conf[:replication][:provider]}.first[1][:hostname]
+      end
+      chef_config[:ldap][:replication][:servers] = @instances.inject([]) do |accum,instance_config|
+        instance_id,instance_conf = instance_config
+        accum << {:id => server_id, :host => instance_conf[:hostname]}
+        server_id += 1
+        accum
+      end
       File.open(chef_config_file(name,role), 'w') do |f|
         chef_config.delete(:servers)
         #f.puts chef_config.delete(:servers).to_json
@@ -155,9 +166,9 @@ class EC2Configurator
   def remote_provision host, user, server_name, server_role
     puts "Connecting to remote host #{host} as #{user}"
     res = ''
-    Net::SSH.start(host, user) do |ssh|
-      system %Q|rsync -avz --delete --rsh="ssh -x -l #{user}" chef/ #{host}:provision/|
-      res = ssh.exec! "cd provision && ./install.sh ldap-master.json"
+    Net::SSH.start(host, user, :keys => [ENV['EC2_SSH_KEYFILE']]) do |ssh|
+      system %Q|rsync -avz --delete --rsh="ssh -i #{ENV['EC2_SSH_KEYFILE']} -x -l #{user}" chef/ #{host}:provision/|
+      res = ssh.exec! "cd provision && ./install.sh #{server_name}-#{server_role}.json"
     end
 
     puts "Got res: #{res}"
@@ -170,17 +181,33 @@ class EC2Configurator
 #       #system *cmd
   end
 
+  def get_instance_id name 
+    res = %x[ec2-describe-tags --filter key=name --filter value=#{name}]
+    data = res.match(/.*instance\t(.*?)\t.*/)
+    if data
+      data[1]
+    else
+      nil
+    end
+  end
+
   def provision_hosts config=@config
     config[:servers].each do |name,server_conf|
-      server_conf[:ami][:id] ||= get_ami_id(server_conf[:ami])
-      puts "Provisioning EC2 instance: #{name}, role=#{server_conf[:role]}"
-      type = server_conf[:ami][:type]
-      region = server_conf[:ami][:region]
-      res = %x[ec2-run-instances "#{server_conf[:ami][:id]}"  --instance-type "#{type}" --region "#{region}" --key "#{ENV['EC2_KEYPAIR']}" --group ldap-server]
-      instance_id = res.match(/.*INSTANCE\t(.*?)\t.*/)[1]
-      puts "Provisioned instance ID: #{instance_id}"
-      tag_instance instance_id, {"name" => name, "ldap-role" => server_conf[:role]}
-      #exit
+      instance_id = get_instance_id name
+      puts "Current instance ID?: #{instance_id}"
+      if !instance_id
+        server_conf[:ami][:id] ||= get_ami_id(server_conf[:ami])
+        puts "Provisioning EC2 instance: #{name}, role=#{server_conf[:role]}"
+        type = server_conf[:ami][:type]
+        region = server_conf[:ami][:region]
+        res = %x[ec2-run-instances "#{server_conf[:ami][:id]}"  --instance-type "#{type}" --region "#{region}" --key "#{ENV['EC2_KEYPAIR']}" --group ldap-server]
+        instance_id = res.match(/.*INSTANCE\t(.*?)\t.*/)[1]
+        puts "Provisioned instance ID: #{instance_id}"
+        tag_instance instance_id, {"name" => name, "ldap-role" => server_conf[:role]}
+        # #exit
+      else
+        puts "Already provisioned #{name}"
+      end
       success = await_server_start instance_id, name, server_conf
       unless success
         raise "server not up yet, giving up"

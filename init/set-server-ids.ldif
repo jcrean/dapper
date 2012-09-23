@@ -1,0 +1,5 @@
+dn: cn=config
+changetype: modify
+replace: olcServerID
+olcServerID: 1 ldap://ec2-107-22-155-105.compute-1.amazonaws.com
+olcServerID: 2 ldap://ec2-184-72-207-93.compute-1.amazonaws.com

@@ -4,22 +4,11 @@
   end
 end
 
-template "/etc/ldap/db.ldif" do
-  source "db.ldif"
+template "/etc/ldap/db-config.ldif" do
+  source "base-db.ldif"
   owner "root"
   group "root"
-end
-
-template "/etc/ldap/base.ldif" do
-  source "base.ldif"
-  owner "root"
-  group "root"
-end
-
-template "/etc/ldap/users.ldif" do
-  source "users.ldif"
-  owner "root"
-  group "root"
+  mode "0700"
 end
 
 template "/etc/ldap/base-install.sh" do

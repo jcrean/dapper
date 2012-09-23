@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+
+ldapmodify -x -w config123 -D 'cn=config' <<-LDAP
+dn: olcDatabase={1}hdb,cn=config
+changetype: modify
+replace: olcDbCheckpoint
+olcDbCheckpoint: $1 30
+LDAP

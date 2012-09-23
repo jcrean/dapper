@@ -1,0 +1,26 @@
+{
+  "ldap": {
+    "root_dn": "cn=admin,dc=yourdomain,dc=com",
+    "root_cn": "admin",
+    "organization": "Some Company",
+    "replication": {
+      "role": "master",
+      "sessionlog_size": 100,
+      "checkpoint": {
+        "max_ops": 100,
+        "max_time": 10
+      }
+    },
+    "suffix": "dc=yourdomain,dc=com",
+    "root_pw": "admin123",
+    "root_dc": "yourdomain",
+    "users_ou": "users",
+    "roles_ou": "roles",
+    "log_level": "stats",
+    "domain": "yourdomain.com"
+  },
+  "recipe": "ldap-server",
+  "run_list": [
+    "recipe[ldap-server::default]"
+  ]
+}

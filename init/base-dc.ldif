@@ -1,0 +1,7 @@
+dn: dc=relayzone,dc=com
+objectClass: dcObject
+objectClass: organization
+objectClass: top
+dc: relayzone
+o: rz
+

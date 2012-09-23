@@ -18,7 +18,7 @@
                {:jetty {:port 8080 :join? false}
                 :ldap  {:logins {:host           "ec2-50-19-13-191.compute-1.amazonaws.com"
                                  :user-id-attr   "uid"
-                                 :user-dn-suffix "ou=users,dc=relayzone,dc=com"
+                                 :user-dn-suffix "ou=users,dc=yourdomain,dc=com"
                                  :pooled?        true
                                  :pool-size      3}}}))
 
@@ -120,10 +120,10 @@
   (init)
 
   (with-ldap :logins
-    (ldap/bind "cn=admin,dc=relayzone,dc=com" "admin123"))
+    (ldap/bind "cn=admin,dc=yourdomain,dc=com" "admin123"))
 
   (with-ldap :logins
-    (ldap/bind "cn=admin,dc=relayzone,dc=com" "admin123")
+    (ldap/bind "cn=admin,dc=yourdomain,dc=com" "admin123")
     (ldap/add-user "jc" "jcjcjc" "josh" "crean"))
 
   (authenticate-user "jcrean" "jcjcjc")

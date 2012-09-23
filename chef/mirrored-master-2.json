@@ -1,0 +1,21 @@
+{
+    "ldap": { "domain": "yourdomain",
+              "organization": "Testing LLC",
+              "root_dc": "yourdomain",
+              "suffix": "dc=yourdomain,dc=com",
+              "root_dn": "cn=admin,dc=yourdomain,dc=com",
+              "root_pw": "admin123",
+              "users_ou": "users",
+              "log_level": "stats",
+
+              "replication": { "role": "master-mirror",
+                               "server_id": 2,
+                               "syncrepl": { "rid": "001",
+                                             "provider": "localhost",
+                                             "type": "refreshAndPersist",
+                                             "searchbase": "dc=yourdomain,dc=com"
+                               }
+              }
+    },
+    "run_list": [ "recipe[ldap-server::default]" ]
+}

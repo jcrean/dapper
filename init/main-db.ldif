@@ -1,0 +1,22 @@
+dn: olcDatabase={2}hdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olchdbConfig
+olcDatabase: {2}hdb
+olcSuffix: dc=relayzone,dc=com
+olcDbDirectory: /var/lib/ldap
+olcRootDN: cn=admin,dc=relayzone,dc=com
+olcRootPW: {SSHA}yj/WpczL2aV4X5Roc2eFdJYCbtdhUhfz
+olcLimits: dn.exact="cn=admin,dc=relayzone,dc=com" time.soft=unlimited time.hard=unlimited size.soft=unlimited size.hard=unlimited
+olcSyncRepl: rid=004 provider=ldap://ec2-107-22-155-105.compute-1.amazonaws.com binddn="cn=admin,dc=relayzone,dc=com" bindmethod=simple
+  credentials=admin123 searchbase="dc=relayzone,dc=com" type=refreshOnly
+  interval=00:00:00:10 retry="5 5 300 5" timeout=1
+olcSyncRepl: rid=005 provider=ldap://ec2-184-72-207-93.compute-1.amazonaws.com binddn="cn=admin,dc=relayzone,dc=com" bindmethod=simple
+  credentials=admin123 searchbase="dc=relayzone,dc=com" type=refreshOnly
+  interval=00:00:00:10 retry="5 5 300 5" timeout=1
+olcMirrorMode: TRUE
+
+dn: olcOverlay=syncprov,olcDatabase={2}hdb,cn=config
+changetype: add
+objectClass: olcOverlayConfig
+objectClass: olcSyncProvConfig
+olcOverlay: syncprov

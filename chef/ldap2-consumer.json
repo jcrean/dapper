@@ -1,0 +1,37 @@
+{
+  "recipe": "ldap-server",
+  "run_list": [
+    "recipe[ldap-server::default]"
+  ],
+  "ldap": {
+    "suffix": "dc=yourdomain,dc=com",
+    "organization": "The Company",
+    "replication": {
+      "role": "consumer",
+      "sessionlog_size": 100,
+      "checkpoint": {
+        "max_ops": 100,
+        "max_time": 10
+      },
+      "servers": [
+        {
+          "host": "ec2-23-20-3-95.compute-1.amazonaws.com",
+          "id": 1
+        },
+        {
+          "host": "ec2-184-73-111-50.compute-1.amazonaws.com",
+          "id": 2
+        }
+      ],
+      "provider": "ec2-23-20-3-95.compute-1.amazonaws.com"
+    },
+    "root_dc": "yourdomain",
+    "root_pw": "admin123",
+    "config_pw": "config123",
+    "domain": "yourdomain.com",
+    "root_dn": "cn=admin,dc=yourdomain,dc=com",
+    "users_ou": "users",
+    "log_level": "stats",
+    "root_cn": "admin"
+  }
+}

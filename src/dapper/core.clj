@@ -192,25 +192,25 @@
   (reregister-ldap!
    :dapper {:host           "ec2-107-22-159-68.compute-1.amazonaws.com"
             :user-id-attr   "uid"
-            :user-dn-suffix "ou=users,dc=relayzone,dc=com"
-            :role-dn-suffix "ou=roles,dc=relayzone,dc=com"
+            :user-dn-suffix "ou=users,dc=yourdomain,dc=com"
+            :role-dn-suffix "ou=roles,dc=yourdomain,dc=com"
             :pooled?        true
             :pool-size      3})
 
   (with-ldap :dapper
-    (bind "cn=admin,dc=relayzone,dc=com" "admin123")
+    (bind "cn=admin,dc=yourdomain,dc=com" "admin123")
     (add-user "jcrean2" "jcjcjc" "josh" "crean"))
 
   (with-ldap :dapper
-    (bind "cn=admin,dc=relayzone,dc=com" "admin123")
+    (bind "cn=admin,dc=yourdomain,dc=com" "admin123")
     (add-user "lc" "lc888" "lau" "c"))
 
   (with-ldap :dapper
-    (bind "cn=admin,dc=relayzone,dc=com" "admin123")
+    (bind "cn=admin,dc=yourdomain,dc=com" "admin123")
     (add-role "admin2" "admin users" ["jcrean" "jdoe"]))
 
   (with-ldap :dapper
-    (bind "cn=admin,dc=relayzone,dc=com" "admin123")
+    (bind "cn=admin,dc=yourdomain,dc=com" "admin123")
     (add-role "admin4" "admin users" ["jcrean2"]))
 
   (with-ldap :dapper

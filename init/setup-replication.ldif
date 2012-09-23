@@ -1,0 +1,28 @@
+dn: cn=config
+changetype: modify
+replace: olcServerID
+olcServerID: 1 ldap://ec2-174-129-131-109.compute-1.amazonaws.com
+olcServerID: 2 ldap://ec2-50-19-140-10.compute-1.amazonaws.com
+olcServerID: 3 ldap://ec2-23-20-56-148.compute-1.amazonaws.com
+
+dn: olcOverlay=syncprov,olcDatabase={0}config,cn=config
+changetype: add
+objectClass: olcOverlayConfig
+objectClass: olcSyncProvConfig
+olcOverlay: syncprov
+
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+add: olcSyncRepl
+olcSyncRepl: rid=001 provider=ldap://ec2-174-129-131-109.compute-1.amazonaws.com binddn="cn=config" bindmethod=simple
+  credentials=secret searchbase="cn=config" type=refreshAndPersist
+  retry="5 5 300 5" timeout=1
+olcSyncRepl: rid=002 provider=ldap://ec2-50-19-140-10.compute-1.amazonaws.com binddn="cn=config" bindmethod=simple
+  credentials=secret searchbase="cn=config" type=refreshAndPersist
+  retry="5 5 300 5" timeout=1
+olcSyncRepl: rid=003 provider=ldap://ec2-23-20-56-148.compute-1.amazonaws.com binddn="cn=config" bindmethod=simple
+  credentials=secret searchbase="cn=config" type=refreshAndPersist
+  retry="5 5 300 5" timeout=1
+-
+add: olcMirrorMode
+olcMirrorMode: TRUE

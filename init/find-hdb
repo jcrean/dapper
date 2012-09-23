@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e 
+
+ldapsearch -x -w config123 -D 'cn=config' -b 'cn=config' '(objectClass=olcHdbConfig)'
